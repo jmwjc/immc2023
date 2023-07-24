@@ -6,50 +6,42 @@ df = import_xlsx("Appendix III.xlsx","Sheet2")
 
 asin = levels(categorical(df[!,"asin"]))
 asinname = Dict{String,String}()
-# for a in asin
-    # a = asin[2000]
-    a = "B000Z822ZS"
+
+for a in asin
     dft = filter(:asin=> x-> x == a, df)
     sd = StringAnalysis.AbstractDocument[]
     for r in dft[:,"reviewText"]
         t = " "
-        for w in eachmatch(r"[a-zA-Z]+",r)
+        for w in eachmatch(r"[a-zA-Z]{3,}",r)
             t *= w.match*" "
         end
-        # s = StringDocument(lowercase(t))
-        # println(text(s))
-        # println(stem!(s))  
-        rstrip(t,['s'])
-        push!(sd,NGramDocument(lowercase(t)))
+        s = StringDocument(lowercase(t))
+        push!(sd,s)
     end
     crps = Corpus(sd)
-    # prepare!(crps, strip_articles|strip_prepositions|strip_pronouns|strip_stopwords|stem_words)
-    prepare!(crps, strip_articles|strip_prepositions|strip_pronouns|strip_stopwords)
-    # println(dft[:,"reviewText"][1])
-    # println(text(crps.documents[1]))
+    prepare!(crps, strip_articles|strip_prepositions|strip_pronouns|strip_stopwords|stem_words)
     update_lexicon!(crps)
     words = collect(keys(crps.lexicon))
     count = collect(values(crps.lexicon))
-    # c,p = findmax(count)
-    # word = words[p]
-    # asinname[a] = word
-# end
-M = DocumentTermMatrix{Float32}(crps, collect(keys(crps.lexicon)));
+    index = sortperm(count,rev=true)
+    words = words[index]
+    count = count[index]
+    n = 1
+    i = 2
+    asinname[a] = words[1]
+    while n ≤ 3 || count[i] == count[1]
+        asinname[a] *= ","*words[i]
+        i += 1
+        n += 1
+    end
+end
 
-lm = LSAModel(M, k=3, stats=:count)
-U = lm.Uᵀ'
-case = 1
-index = sortperm(U[:,case])
-words = collect(keys(crps.lexicon))
-count = collect(values(crps.lexicon))
-println(words[index])
-println(count[index])
-# XLSX.openxlsx("./dfq.xlsx", mode="rw") do xf
-#     sheet = xf[1]
-#     sheet["A1"] = "asin"
-#     sheet["B1"] = "name"
-#     for (i,(a,w)) in enumerate(asinname)
-#         sheet["A"*string(i+1)] = a
-#         sheet["B"*string(i+1)] = w
-#     end
-# end
+XLSX.openxlsx("./dfq.xlsx", mode="rw") do xf
+    sheet = xf[1]
+    sheet["A1"] = "asin"
+    sheet["B1"] = "name"
+    for (i,(a,w)) in enumerate(asinname)
+        sheet["A"*string(i+1)] = a
+        sheet["B"*string(i+1)] = w
+    end
+end
