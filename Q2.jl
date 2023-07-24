@@ -6,8 +6,9 @@ df = import_xlsx("Appendix III.xlsx","Sheet2")
 
 asin = levels(categorical(df[!,"asin"]))
 asinname = Dict{String,String}()
-for a in asin
+# for a in asin
     # a = asin[2000]
+    a = "B000Z822ZS"
     dft = filter(:asin=> x-> x == a, df)
     sd = StringAnalysis.AbstractDocument[]
     for r in dft[:,"reviewText"]
@@ -29,13 +30,26 @@ for a in asin
     update_lexicon!(crps)
     words = collect(keys(crps.lexicon))
     count = collect(values(crps.lexicon))
-    c,p = findmax(count)
-    word = words[p]
-    asinname[a] = word
-end
+    # c,p = findmax(count)
+    # word = words[p]
+    # asinname[a] = word
+# end
+M = DocumentTermMatrix{Float32}(crps, collect(keys(crps.lexicon)));
 
-XLSX.openxlsx("./dfq.xlsx", mode="rw") do xf
-    sheet = xf[1]
-    sheet[1, :] = asinname.keys
-
-end
+lm = LSAModel(M, k=3, stats=:count)
+U = lm.Uᵀ'
+case = 1
+index = sortperm(U[:,case])
+words = collect(keys(crps.lexicon))
+count = collect(values(crps.lexicon))
+println(words[index])
+println(count[index])
+# XLSX.openxlsx("./dfq.xlsx", mode="rw") do xf
+#     sheet = xf[1]
+#     sheet["A1"] = "asin"
+#     sheet["B1"] = "name"
+#     for (i,(a,w)) in enumerate(asinname)
+#         sheet["A"*string(i+1)] = a
+#         sheet["B"*string(i+1)] = w
+#     end
+# end
