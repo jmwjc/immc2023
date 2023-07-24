@@ -1,13 +1,13 @@
-using StringAnalysis, CategoricalArrays, Languages, XLSX
+using StringAnalysis, CategoricalArrays, Languages, XLSX, DataFrames
 
 include("import.jl")
 
 df = import_xlsx("Appendix III.xlsx","Sheet2")
 
 asin = levels(categorical(df[!,"asin"]))
-
-# for a in asin[1:1]
-a = asin[1]
+asinname = Dict{String,String}()
+for a in asin
+    # a = asin[2000]
     dft = filter(:asin=> x-> x == a, df)
     sd = StringAnalysis.AbstractDocument[]
     for r in dft[:,"reviewText"]
@@ -17,7 +17,8 @@ a = asin[1]
         end
         # s = StringDocument(lowercase(t))
         # println(text(s))
-        # println(stem!(s))
+        # println(stem!(s))  
+        rstrip(t,['s'])
         push!(sd,NGramDocument(lowercase(t)))
     end
     crps = Corpus(sd)
@@ -26,5 +27,15 @@ a = asin[1]
     # println(dft[:,"reviewText"][1])
     # println(text(crps.documents[1]))
     update_lexicon!(crps)
+    words = collect(keys(crps.lexicon))
+    count = collect(values(crps.lexicon))
+    c,p = findmax(count)
+    word = words[p]
+    asinname[a] = word
+end
 
-    rstrip(word,['s'])
+XLSX.openxlsx("./dfq.xlsx", mode="rw") do xf
+    sheet = xf[1]
+    sheet[1, :] = asinname.keys
+
+end
