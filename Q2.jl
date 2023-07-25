@@ -2,7 +2,7 @@ using StringAnalysis, CategoricalArrays, Languages, XLSX, DataFrames
 
 include("import.jl")
 
-df = import_xlsx("Appendix III.xlsx","Sheet2")
+df = import_xlsx("Appendix IV.xlsx","Sheet2")
 
 asin = levels(categorical(df[!,"asin"]))
 asinname = Dict{String,String}()
@@ -19,7 +19,7 @@ for a in asin
         push!(sd,s)
     end
     crps = Corpus(sd)
-    prepare!(crps, strip_articles|strip_prepositions|strip_pronouns|strip_stopwords|stem_words)
+    prepare!(crps, strip_articles|strip_prepositions|strip_pronouns|strip_stopwords)
     update_lexicon!(crps)
     words = collect(keys(crps.lexicon))
     count = collect(values(crps.lexicon))
@@ -36,7 +36,7 @@ for a in asin
     end
 end
 
-XLSX.openxlsx("./dfq.xlsx", mode="rw") do xf
+XLSX.openxlsx("./Q2IV.xlsx", mode="rw") do xf
     sheet = xf[1]
     sheet["A1"] = "asin"
     sheet["B1"] = "name"
